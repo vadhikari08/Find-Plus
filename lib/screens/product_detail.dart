@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
+import 'package:shop_app/provider/cart.dart';
 import 'package:shop_app/utility/categories.dart';
 import 'package:shop_app/utility/constant.dart';
 import '../provider/products.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../utility/constant.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -26,7 +28,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   String productionDetails = 'Product Details :';
   String productionAdded =
       'Product is added to cart. Seller will call you shortly.';
-  String addProductSpeech = "You do want to add this product in cart?";
+  String addProductSpeech = "Do you want to add this product in cart?";
   TtsState ttsState = TtsState.stopped;
   FlutterTts flutterTts;
   dynamic languages;
@@ -36,6 +38,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   double rate = 0.5;
   stt.SpeechToText speech;
   bool _startedInstruction = false;
+  var cart;
+  String id;
+  double price;
+  String title;
 
   get isPlaying => ttsState == TtsState.playing;
 
@@ -51,6 +57,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    speech = stt.SpeechToText();
     initTts();
   }
 
@@ -59,8 +66,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final productId = ModalRoute.of(context).settings.arguments as String;
     final product = Provider.of<Products>(context, listen: false)
         .productFindById(productId: productId);
+    cart = Provider.of<Cart>(context, listen: false);
     productionDetails = productionDetails +
         " product name is ${product.title}. Color of product is ${product.color}. Product price is ${product.price} dollars. Do you want to hear details again?";
+      id = product.id;
+      price = product.price;
+      title = product.title;
     if (!_startedInstruction) {
       _startedInstruction = true;
       _newVoiceText = productionDetails;
@@ -152,7 +163,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         print("Complete");
         ttsState = TtsState.stopped;
       });
-      _startSpeaking();
+      if (_newVoiceText == productionAdded) {
+        cart.addItem(id, price, title);
+        Navigator.pushReplacementNamed(context, Constants.cartScreenRoute);
+      } else {
+        _startSpeaking();
+      }
     });
 
     flutterTts.setCancelHandler(() {
@@ -365,6 +381,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void errorListener(SpeechRecognitionError error) {
     print('error--------------------->$error');
     speech.stop();
+    Future.delayed(Duration(seconds: 1), () => _startInstruction());
   }
 
   void resultListener(SpeechRecognitionResult result) async {
@@ -382,6 +399,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           _newVoiceText = addProductSpeech;
           _startInstruction();
         } else {
+          print("This is called");
           Navigator.of(context).pop();
         }
       } else if (result.recognizedWords
