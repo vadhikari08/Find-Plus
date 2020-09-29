@@ -1,12 +1,41 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/screens/orders_sreen.dart';
 
 import '../helpers/custom_route.dart';
 import '../provider/auth.dart';
 import '../utility/constant.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
+  @override
+  _AppDrawerState createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  bool isAdmin = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initValue();
+  }
+
+  void initValue() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!preferences.containsKey('userData')) {
+      isAdmin = false;
+      return;
+    }
+    final userData =
+        json.decode(preferences.getString('userData')) as Map<String, dynamic>;
+    isAdmin = userData['email'] == 'vikram@test.com';
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -33,20 +62,22 @@ class AppDrawer extends StatelessWidget {
                   context, CustomRoute(builder: (context) => OrderScreen()));
             },
           ),
-          Divider(),
-          ListTile(
-            leading: const Icon(Icons.shopping_basket),
-            title: const Text('Manage Products'),
-            onTap: () => Navigator.pushReplacementNamed(
-                context, Constants.userProductScreenRoute),
-          ),
-          Divider(),
+          isAdmin ? Divider() : SizedBox(),
+          isAdmin
+              ? ListTile(
+                  leading: const Icon(Icons.shopping_basket),
+                  title: const Text('Manage Products'),
+                  onTap: () => Navigator.pushReplacementNamed(
+                      context, Constants.userProductScreenRoute),
+                )
+              : SizedBox(),
+/*          Divider(),
           ListTile(
             leading: const Icon(Icons.shopping_basket),
             title: const Text('Add Category'),
             onTap: () => Navigator.pushReplacementNamed(
                 context, Constants.addCategoryRoute),
-          ),
+          ),*/
           Divider(),
           ListTile(
             leading: const Icon(Icons.exit_to_app),

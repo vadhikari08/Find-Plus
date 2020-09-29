@@ -10,16 +10,7 @@ class CartProductScreen extends StatelessWidget {
     final cart = Provider.of<Cart>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cart Items'),
-        actions: <Widget>[
-          PopupMenuButton(
-            onSelected: (value) {
-              print(value);
-            },
-            itemBuilder: (context) => [PopupMenuItem(child: Text("hello"))],
-          )
-        ],
-      ),
+        title: Text('Cart Items'),),
       body: Column(
         children: <Widget>[
           Card(
@@ -79,6 +70,7 @@ class OrderButton extends StatefulWidget {
 
 class _OrderButtonState extends State<OrderButton> {
   bool _isloading = false;
+
   @override
   Widget build(BuildContext context) {
     final scaffold = Scaffold.of(context);

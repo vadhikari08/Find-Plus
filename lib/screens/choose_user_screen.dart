@@ -26,7 +26,7 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
   String language;
   double volume = 0.5;
   double pitch = 1.0;
-  double rate = 0.5;
+  double rate = 1.0;
   stt.SpeechToText speech;
 
   String _newVoiceText = Constants.choose_user_message;
@@ -76,6 +76,7 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
         print("Complete");
         ttsState = TtsState.stopped;
       });
+      _startSpeaking();
     });
 
     flutterTts.setCancelHandler(() {
@@ -170,8 +171,6 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
       await speech.listen(onResult: resultListener);
     } else {
       speech.stop();
-      print('---------------> not speeching');
-      print("The user has denied the use of speech recognition.");
     }
     // some time later...
   }
@@ -185,9 +184,10 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
     speech.stop();
   }
 
-  void resultListener(SpeechRecognitionResult result) async{
-    print(result.recognizedWords.toString());
-    if (result.confidence > 0 && result.finalResult == true) {
+  void resultListener(SpeechRecognitionResult result) async {
+    print('${result.recognizedWords.toString()}   ---------     ${result.confidence} ---------  ${result.finalResult}');
+    if (result.confidence >= 0 && result.finalResult == true) {
+      print({'result is final${result.recognizedWords.toString()}'});
       if (result.recognizedWords != null && result.recognizedWords.isEmpty) {
         _newVoiceText = Constants.unable_to_choose_yes_and_no;
         //_startInstruction();
@@ -198,15 +198,18 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
       if (result.recognizedWords
           .toUpperCase()
           .contains(Constants.no.toUpperCase())) {
-        preferences.setBool('vision', true);
-        Navigator.of(context).pushReplacementNamed(Constants.authRoute);
+       preferences.setBool('vision', true);
+        Navigator.of(context)
+            .pushReplacementNamed(Constants.authRoute, arguments: true);
       } else if (result.recognizedWords
           .toUpperCase()
           .contains(Constants.yes.toUpperCase())) {
-        preferences.setBool('vision', false);
-        Navigator.of(context).pushReplacementNamed(Constants.authRoute);      } else {
+       preferences.setBool('vision', false);
+        Navigator.of(context)
+            .pushReplacementNamed(Constants.authRoute, arguments: false);
+      } else {
         _newVoiceText = Constants.unable_to_choose_yes_and_no;
-        // _startInstruction();
+        _startInstruction();
       }
     }
   }

@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
         builder: (context, auth, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Flutter Demo',
+            title: 'Find Plus',
             theme: ThemeData(
               pageTransitionsTheme: PageTransitionsTheme(builders: {
                 TargetPlatform.android: CustompageTransitionBuilder(),
