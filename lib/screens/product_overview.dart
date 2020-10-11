@@ -5,6 +5,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/provider/cart.dart';
+import 'package:shop_app/utility/categories.dart';
 import '../widgets/product_grid.dart';
 import '../widgets/badge.dart';
 import '../utility/constant.dart';
@@ -16,6 +17,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 enum menu { fav, all }
+
 enum TtsState { playing, stopped, paused, continued }
 
 class ProductOverviewScreen extends StatefulWidget {
@@ -39,6 +41,10 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
   double pitch = 1.0;
   double rate = 0.5;
   stt.SpeechToText speech;
+  bool noProduct = false;
+  String _noProduct = "No product found";
+  String _selectedCategory = "all";
+  bool startedInstruction = false;
 
   get isPlaying => ttsState == TtsState.playing;
 
@@ -55,8 +61,6 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
     super.initState();
     initTts();
     speech = stt.SpeechToText();
-    initValue();
-    _startInstruction();
   }
 
   void initValue() async {
@@ -83,6 +87,7 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
       Provider.of<Products>(context, listen: false)
           .fetchProduct()
           .then((value) {
+        initValue();
         if (!mounted) return;
         setState(() {
           _isloading = false;
@@ -125,26 +130,28 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
             ),
           ),
           PopupMenuButton(
-            onSelected: (menu value) {
-              if (menu.fav == value) {
-                setState(() {
-                  _isfavorite = true;
-                });
-              } else {
-                setState(() {
-                  _isfavorite = false;
-                });
-              }
+            initialValue: _selectedCategory,
+            onSelected: (value) {
+              _selectedCategory = value;
+              setState(() {});
             },
             itemBuilder: (_) => [
-              PopupMenuItem(
+             /* PopupMenuItem(
                 child: Text('My Favorites'),
                 value: menu.fav,
-              ),
+              ),*/
               PopupMenuItem(
                 child: Text('All Products'),
-                value: menu.all,
-              )
+                value: "all",
+              ),
+              ...AllCategory.productCategories
+                  .map(
+                    (e) => PopupMenuItem(
+                      child: Text(e.categoryLabel),
+                      value: e.categoryLabel,
+                    ),
+                  )
+                  .toList(),
             ],
             icon: Icon(Icons.more_vert),
           ),
@@ -159,7 +166,8 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
               ? Center(
                   child: Text(errorMessage),
                 )
-              : ProductGrid(_isfavorite, _searchTitle),
+              : ProductGrid(_isfavorite, _searchTitle, _startInstruction,
+                  resetSearchTitle, _selectedCategory),
     );
   }
 
@@ -220,6 +228,11 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
     });
   }
 
+  void resetSearchTitle() {
+    _searchTitle = "";
+    setState(() {});
+  }
+
   Future _getLanguages() async {
     languages = await flutterTts.getLanguages;
     if (languages != null) setState(() => languages);
@@ -237,7 +250,7 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
     }
   }
 
-  Future _startInstruction() async {
+  Future _startInstruction({bool noProduct}) async {
     print('start Instruction is called');
     await flutterTts.setSpeechRate(1.0);
     await flutterTts.setVolume(1.0);

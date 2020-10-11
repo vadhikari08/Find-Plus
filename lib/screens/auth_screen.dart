@@ -22,7 +22,7 @@ class AuthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
-    final bool _vision = ModalRoute.of(context).settings.arguments ?? false;
+    final bool _vision = ModalRoute.of(context).settings.arguments ?? true;
 
     // final transformConfig = Matrix4.rotationZ(-8 * pi / 180);
     // transformConfig.translate(-10.0);
@@ -84,7 +84,7 @@ class AuthScreen extends StatelessWidget {
                   ),
                   Flexible(
                     flex: deviceSize.width > 600 ? 2 : 1,
-                    child: AuthCard(vision: _vision),
+                    child: AuthCard(),
                   ),
                 ],
               ),
@@ -99,9 +99,8 @@ class AuthScreen extends StatelessWidget {
 enum TtsState { playing, stopped, paused, continued }
 
 class AuthCard extends StatefulWidget {
-  final vision;
 
-  const AuthCard({Key key, this.vision}) : super(key: key);
+  const AuthCard({Key key}) : super(key: key);
 
   @override
   _AuthCardState createState() => _AuthCardState();
@@ -130,7 +129,7 @@ class _AuthCardState extends State<AuthCard>
   bool _enterEmail = true;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
+  bool hasVision = false;
   String _tellPassword = "Tell your password?";
   String _tellEmail = "Tell your email address?";
   String _newVoiceText = 'Tell your email address';
@@ -162,7 +161,7 @@ class _AuthCardState extends State<AuthCard>
     getUserType();
     initTts();
     speech = stt.SpeechToText();
-    if (!widget.vision) _startInstruction();
+    initValue();
   }
 
   initTts() {
@@ -220,6 +219,17 @@ class _AuthCardState extends State<AuthCard>
         ttsState = TtsState.stopped;
       });
     });
+  }
+
+  void initValue() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!preferences.containsKey('vision')) {
+      hasVision = true;
+      return;
+    }
+    print('value of vision is ${preferences.getBool("vision")}');
+    hasVision = preferences.getBool('vision');
+    if (!hasVision) _startInstruction();
   }
 
   Future _getLanguages() async {
@@ -332,6 +342,9 @@ class _AuthCardState extends State<AuthCard>
         // Log user in
         await Provider.of<Auth>(context, listen: false)
             .signIn(_authData['email'], _authData['password']);
+       /* if(Provider.of<Auth>(context).isAuth){
+          Navigator.of(context).pushReplacementNamed(Constants.homeSCreenRoute);
+        }*/
       } else {
         // Sign user up
         await Provider.of<Auth>(context, listen: false)
@@ -430,7 +443,7 @@ class _AuthCardState extends State<AuthCard>
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value.isEmpty || !value.contains('@')) {
-                      if (!widget.vision) {
+                      if (!hasVision) {
                         _enterEmail = true;
                         _newVoiceText =
                             "Invalid email, Please tell you email again";

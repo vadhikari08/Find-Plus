@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/provider/cart.dart';
 import 'package:shop_app/utility/categories.dart';
 import 'package:shop_app/utility/constant.dart';
@@ -69,9 +71,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     cart = Provider.of<Cart>(context, listen: false);
     productionDetails = productionDetails +
         " product name is ${product.title}. Color of product is ${product.color}. Product price is ${product.price} dollars. Do you want to hear details again?";
-      id = product.id;
-      price = product.price;
-      title = product.title;
+    id = product.id;
+    price = product.price;
+    title = product.title;
     if (!_startedInstruction) {
       _startedInstruction = true;
       _newVoiceText = productionDetails;
@@ -99,8 +101,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               title: Padding(
                 padding: const EdgeInsets.only(right: 20),
                 child: Text("${product.title}",
-                    /* style: TextStyle(
-                        backgroundColor: Colors.black54, color: Colors.white), */
+                     style: TextStyle(
+                        backgroundColor: Colors.black54, color: Colors.white),
                     overflow: TextOverflow.ellipsis),
               ),
               background: Hero(
@@ -133,7 +135,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [_productGender(product), _productSize(product)])
                 : SizedBox(),
             _productDescription(product),
-            SizedBox(height: 300),
+            SizedBox(height: 170),
           ]))
         ],
       ),
@@ -202,6 +204,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    flutterTts.stop();
+    speech.stop();
+    super.dispose();
+  }
+
   Padding _productSize(Product product) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -222,6 +231,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
     );
   }
+
 
   Padding _productGender(Product product) {
     return Padding(
@@ -254,12 +264,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
           ),
           SizedBox(width: 10),
-          Text(
-            '${product.productCategory}',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          ),
+            Expanded(
+              child: AutoSizeText(
+                '${product.productCategory}',
+                minFontSize: 10,
+                maxFontSize: 20,
+                overflow: TextOverflow.clip,
+                style:
+                    TextStyle(color: Colors.black, fontWeight: FontWeight.w200),
+              ),
+            ),
         ],
       ),
     );
@@ -337,6 +351,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future _startInstruction() async {
     print('start Instruction is called');
+    bool hasVision;
+    final preferences = await SharedPreferences.getInstance();
+    if (!preferences.containsKey('vision')) {
+      hasVision = true;
+      return;
+    }
+    print('value of vision is ${preferences.getBool("vision")}');
+    hasVision = preferences.getBool('vision');
+    if (hasVision) return;
     await flutterTts.setSpeechRate(1.0);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);

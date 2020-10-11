@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_app/provider/auth.dart';
 import 'package:shop_app/utility/constant.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -185,7 +187,8 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
   }
 
   void resultListener(SpeechRecognitionResult result) async {
-    print('${result.recognizedWords.toString()}   ---------     ${result.confidence} ---------  ${result.finalResult}');
+    print(
+        '${result.recognizedWords.toString()}   ---------     ${result.confidence} ---------  ${result.finalResult}');
     if (result.confidence >= 0 && result.finalResult == true) {
       print({'result is final${result.recognizedWords.toString()}'});
       if (result.recognizedWords != null && result.recognizedWords.isEmpty) {
@@ -198,15 +201,17 @@ class _ChooseUserScreenState extends State<ChooseUserScreen> {
       if (result.recognizedWords
           .toUpperCase()
           .contains(Constants.no.toUpperCase())) {
-       preferences.setBool('vision', true);
-        Navigator.of(context)
-            .pushReplacementNamed(Constants.authRoute, arguments: true);
+        preferences.setBool('vision', true);
+/*        Navigator.of(context)
+            .pushReplacementNamed(Constants.authRoute, arguments: true);*/
+        Provider.of<Auth>(context,listen: false).callListener();
       } else if (result.recognizedWords
           .toUpperCase()
           .contains(Constants.yes.toUpperCase())) {
-       preferences.setBool('vision', false);
-        Navigator.of(context)
-            .pushReplacementNamed(Constants.authRoute, arguments: false);
+        preferences.setBool('vision', false);
+        Provider.of<Auth>(context,listen: false).callListener();
+/*        Navigator.of(context)
+            .pushReplacementNamed(Constants.authRoute, arguments: false);*/
       } else {
         _newVoiceText = Constants.unable_to_choose_yes_and_no;
         _startInstruction();

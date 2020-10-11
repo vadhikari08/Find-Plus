@@ -30,6 +30,12 @@ class Products with ChangeNotifier {
             element.title.toLowerCase().contains(title.toLowerCase()))
         .toList();
   }
+  List<Product> selectedCategory(String category) {
+    return _item
+        .where((element) =>
+        element.productCategory.toLowerCase().contains(category.toLowerCase()))
+        .toList();
+  }
 
   Product productFindById({productId}) {
     return items.firstWhere(

@@ -44,14 +44,14 @@ class Auth with ChangeNotifier {
             'returnSecureToken': true
           }));
       print(json.decode(response.body));
-      final resonseBody = json.decode(response.body) as Map<String, dynamic>;
-      if (resonseBody['error'] != null) {
-        throw HttpException(message: resonseBody['error']['message']);
+      final responseBody = json.decode(response.body) as Map<String, dynamic>;
+      if (responseBody['error'] != null) {
+        throw HttpException(message: responseBody['error']['message']);
       }
-      _token = resonseBody['idToken'];
-      _userId = resonseBody['localId'];
+      _token = responseBody['idToken'];
+      _userId = responseBody['localId'];
       _expireDate = DateTime.now()
-          .add(Duration(seconds: int.parse(resonseBody['expiresIn'])));
+          .add(Duration(seconds: int.parse(responseBody['expiresIn'])));
       print('notifiy listeners');
       autoLogout();
       notifyListeners();
@@ -76,7 +76,7 @@ class Auth with ChangeNotifier {
       return false;
     }
     final userData =
-        json.decode(preferences.getString('userData')) as Map<String, dynamic>;
+    json.decode(preferences.getString('userData')) as Map<String, dynamic>;
     print('preference data $userData');
     final expiryDate = DateTime.parse(userData['expire_date']);
     if (expiryDate.isBefore(DateTime.now())) {
@@ -88,6 +88,18 @@ class Auth with ChangeNotifier {
     autoLogout();
     notifyListeners();
     return true;
+  }
+
+  Future<bool> hasVision() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!preferences.containsKey('vision')) {
+      return false;
+    }
+    return true;
+  }
+
+  void callListener() {
+    notifyListeners();
   }
 
   Future<void> signIn(String email, String password) async {

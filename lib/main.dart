@@ -60,14 +60,27 @@ class MyApp extends StatelessWidget {
               accentColor: Colors.pink,
               visualDensity: VisualDensity.adaptivePlatformDensity,
             ),
-            home:  /*ChooseUserScreen() ,*/ auth.isAuth
+            home: /*ChooseUserScreen() ,*/ auth.isAuth
                 ? ProductOverviewScreen()
                 : FutureBuilder(
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting)
                         return SplashScreen();
-                      else
-                        return AuthScreen();
+                      else {
+                        return FutureBuilder(
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting)
+                              return SplashScreen();
+                            else
+                              if(snapshot.data)
+                              return AuthScreen();
+                              else
+                                return ChooseUserScreen();
+                          },
+                          future: auth.hasVision(),
+                        );
+                      }
                     },
                     future: auth.autoLogin(),
                   ),
