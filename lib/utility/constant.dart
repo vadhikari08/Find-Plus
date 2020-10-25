@@ -10,6 +10,7 @@ class Constants {
   static const String authRoute = '/auth-screen';
   static const String chooseUserRoute = '/choose-user-screen';
   static const String addCategoryRoute = '/add_category_screen';
+  static const String placeOrderDetailsRoute = '/place_order_details_route';
 
   // const url
   static const String firebaseUrl = 'https://vi-e-commerce.firebaseio.com/';

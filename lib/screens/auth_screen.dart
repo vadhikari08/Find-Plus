@@ -99,7 +99,6 @@ class AuthScreen extends StatelessWidget {
 enum TtsState { playing, stopped, paused, continued }
 
 class AuthCard extends StatefulWidget {
-
   const AuthCard({Key key}) : super(key: key);
 
   @override
@@ -113,6 +112,9 @@ class _AuthCardState extends State<AuthCard>
   Map<String, String> _authData = {
     'email': '',
     'password': '',
+    'firstName': '',
+    'lastName': '',
+    'number': '',
   };
   AnimationController _controller;
   Animation<Size> _heightAnimation;
@@ -126,13 +128,20 @@ class _AuthCardState extends State<AuthCard>
   stt.SpeechToText speech;
   String email;
   String password;
-  bool _enterEmail = true;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+
   bool hasVision = false;
   String _tellPassword = "Tell your password?";
   String _tellEmail = "Tell your email address?";
-  String _newVoiceText = 'Tell your email address';
+  String _newVoiceText = 'Are you a new user?';
+  String _areYouANewUser = 'Are you a new user?';
+  String _tellFirstName = ' Tell your first name?.';
+  String _tellLastName = 'Tell your last name?';
+  String _tellNumber = 'Tell your Number?';
   TtsState ttsState = TtsState.stopped;
 
   get isPlaying => ttsState == TtsState.playing;
@@ -284,7 +293,7 @@ class _AuthCardState extends State<AuthCard>
     } else {
       speech.stop();
     }
-    // some time later...
+// some time later...
   }
 
   void statusListener(String status) {
@@ -307,17 +316,25 @@ class _AuthCardState extends State<AuthCard>
       String text = result.recognizedWords
           .toLowerCase()
           .replaceAll(new RegExp(r"\s+"), "");
-      if (_enterEmail) {
-        _enterEmail = false;
+      if (_newVoiceText == _tellEmail) {
         _emailController.text = text;
         setState(() {});
         _newVoiceText = _tellPassword;
         _startInstruction();
-      } else {
+      } else if (_newVoiceText == _tellPassword) {
         _passwordController.text = text;
         setState(() {});
         _newVoiceText = _tellPassword;
         _submit();
+      } else if (_newVoiceText == _areYouANewUser) {
+        if (text.toLowerCase() == "yes") {
+          _switchAuthMode();
+          _newVoiceText = _tellEmail;
+          _startInstruction();
+        } else if (text.toLowerCase() == 'no') {
+          _newVoiceText = _tellEmail;
+          _startInstruction();
+        }
       }
 
       result.recognizedWords.toUpperCase().contains(Constants.no.toUpperCase());
@@ -342,7 +359,7 @@ class _AuthCardState extends State<AuthCard>
         // Log user in
         await Provider.of<Auth>(context, listen: false)
             .signIn(_authData['email'], _authData['password']);
-       /* if(Provider.of<Auth>(context).isAuth){
+        /* if(Provider.of<Auth>(context).isAuth){
           Navigator.of(context).pushReplacementNamed(Constants.homeSCreenRoute);
         }*/
       } else {
@@ -439,22 +456,62 @@ class _AuthCardState extends State<AuthCard>
               children: <Widget>[
                 TextFormField(
                   controller: _emailController,
-                  decoration: InputDecoration(labelText: 'E-Mail'),
+                  decoration: InputDecoration(labelText: 'Username'),
                   keyboardType: TextInputType.emailAddress,
+                  onSaved: (value) {
+                    _authData['email'] = value;
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'First Name'),
+                  obscureText: true,
+                  controller: _firstNameController,
+                  onSaved: (value) {
+                    _authData['firstName'] = value;
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Last Name'),
+                  obscureText: true,
+                  controller: _lastNameController,
+                  onSaved: (value) {
+                    _authData['lastName'] = value;
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Phone Number'),
+                  obscureText: true,
+                  controller: _phoneController,
+                  onSaved: (value) {
+                    _authData['number'] = value;
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                  controller: _passwordController,
                   validator: (value) {
-                    if (value.isEmpty || !value.contains('@')) {
-                      if (!hasVision) {
-                        _enterEmail = true;
-                        _newVoiceText =
-                            "Invalid email, Please tell you email again";
-                        _startInstruction();
-                      }
-                      return 'Invalid email!';
+                    if (value.isEmpty || value.length < 5) {
+                      return 'Password is too short!';
                     }
                     return null;
                   },
                   onSaved: (value) {
-                    _authData['email'] = value;
+                    _authData['password'] = value;
+                  },
+                ),
+                TextFormField(
+                  decoration: InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                  controller: _passwordController,
+                  validator: (value) {
+                    if (value.isEmpty || value.length < 5) {
+                      return 'Password is too short!';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) {
+                    _authData['password'] = value;
                   },
                 ),
                 TextFormField(

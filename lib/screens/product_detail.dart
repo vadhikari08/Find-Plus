@@ -70,7 +70,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         .productFindById(productId: productId);
     cart = Provider.of<Cart>(context, listen: false);
     productionDetails = productionDetails +
-        " product name is ${product.title}. Color of product is ${product.color}. Product price is ${product.price} dollars. Do you want to hear details again?";
+        " product name is ${product.title}. Color of product is ${product.color}. Product price is ${product.price} dollars. Description of products are ${product.description}."
+            "Do you want to hear details again?";
     id = product.id;
     price = product.price;
     title = product.title;
@@ -101,7 +102,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               title: Padding(
                 padding: const EdgeInsets.only(right: 20),
                 child: Text("${product.title}",
-                     style: TextStyle(
+                    style: TextStyle(
                         backgroundColor: Colors.black54, color: Colors.white),
                     overflow: TextOverflow.ellipsis),
               ),
@@ -232,7 +233,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-
   Padding _productGender(Product product) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -264,16 +264,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
           ),
           SizedBox(width: 10),
-            Expanded(
-              child: AutoSizeText(
-                '${product.productCategory}',
-                minFontSize: 10,
-                maxFontSize: 20,
-                overflow: TextOverflow.clip,
-                style:
-                    TextStyle(color: Colors.black, fontWeight: FontWeight.w200),
-              ),
+          Expanded(
+            child: AutoSizeText(
+              '${product.productCategory}',
+              minFontSize: 10,
+              maxFontSize: 20,
+              overflow: TextOverflow.clip,
+              style:
+                  TextStyle(color: Colors.black, fontWeight: FontWeight.w200),
             ),
+          ),
         ],
       ),
     );

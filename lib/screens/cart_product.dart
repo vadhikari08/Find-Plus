@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_app/utility/constant.dart';
 import '../provider/cart.dart';
 import '../widgets/card_item.dart';
 import '../provider/orders.dart';
@@ -10,7 +14,8 @@ class CartProductScreen extends StatelessWidget {
     final cart = Provider.of<Cart>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cart Items'),),
+        title: Text('Cart Items'),
+      ),
       body: Column(
         children: <Widget>[
           Card(
@@ -87,7 +92,9 @@ class _OrderButtonState extends State<OrderButton> {
       onPressed: (widget.cart.items.length == 0 || _isloading)
           ? null
           : () async {
-              setState(() {
+              Navigator.of(context)
+                  .pushReplacementNamed(Constants.placeOrderDetailsRoute);
+/*              setState(() {
                 _isloading = true;
               });
               try {
@@ -105,8 +112,34 @@ class _OrderButtonState extends State<OrderButton> {
                 setState(() {
                   _isloading = false;
                 });
-              }
+              }*/
             },
     );
+  }
+
+  Timer timer;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+   // timer = Timer(Duration(seconds: 2), openHomeAgain);
+  }
+  @override
+  void dispose() {
+    // TODO: implement dispose
+   // timer.cancel();
+    super.dispose();
+
+  }
+
+  void openHomeAgain() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!preferences.containsKey('vision')) {
+      return;
+    }
+    if (!preferences.getBool("vision")) {
+      Navigator.of(context).pushNamed(Constants.homeSCreenRoute);
+    }
   }
 }

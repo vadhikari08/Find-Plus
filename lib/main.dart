@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shop_app/screens/choose_user_screen.dart';
 import 'package:shop_app/screens/manage_products/create_category.dart';
+import 'package:shop_app/screens/place_order_details.dart';
 import 'package:shop_app/screens/product_detail.dart';
 import 'package:shop_app/screens/splash_screen.dart';
 
@@ -72,11 +73,10 @@ class MyApp extends StatelessWidget {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting)
                               return SplashScreen();
-                            else
-                              if(snapshot.data)
+                            else if (snapshot.data)
                               return AuthScreen();
-                              else
-                                return ChooseUserScreen();
+                            else
+                              return ChooseUserScreen();
                           },
                           future: auth.hasVision(),
                         );
@@ -94,7 +94,8 @@ class MyApp extends StatelessWidget {
               Constants.editProductRoute: (ctx) => EditProductScreen(),
               Constants.authRoute: (ctx) => AuthScreen(),
               Constants.chooseUserRoute: (ctx) => ChooseUserScreen(),
-              Constants.addCategoryRoute: (ctx) => CreateCategory()
+              Constants.addCategoryRoute: (ctx) => CreateCategory(),
+              Constants.placeOrderDetailsRoute: (ctx) => PlaceOrderDetails(),
             },
           );
         },
