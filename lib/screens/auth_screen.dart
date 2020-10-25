@@ -130,18 +130,20 @@ class _AuthCardState extends State<AuthCard>
   String password;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
 
   bool hasVision = false;
-  String _tellPassword = "Tell your password?";
-  String _tellEmail = "Tell your email address?";
+  static const String _tellPassword = "Tell your password?";
+  static const String _tellConfirmPassword = "Tell your password again?";
+  static const String _tellEmail = "Tell your username";
   String _newVoiceText = 'Are you a new user?';
-  String _areYouANewUser = 'Are you a new user?';
-  String _tellFirstName = ' Tell your first name?.';
-  String _tellLastName = 'Tell your last name?';
-  String _tellNumber = 'Tell your Number?';
+  static const String _areYouANewUser = 'Are you a new user?';
+  static const String _tellFirstName = ' Tell your first name?.';
+  static const String _tellLastName = 'Tell your last name?';
+  static const String _tellNumber = 'Tell your Number?';
   TtsState ttsState = TtsState.stopped;
 
   get isPlaying => ttsState == TtsState.playing;
@@ -316,6 +318,56 @@ class _AuthCardState extends State<AuthCard>
       String text = result.recognizedWords
           .toLowerCase()
           .replaceAll(new RegExp(r"\s+"), "");
+      switch (_newVoiceText) {
+        case _tellEmail:
+          if (_authMode == AuthMode.Login) {
+            _emailController.text = text;
+            setState(() {});
+            _newVoiceText = _tellPassword;
+            _startInstruction();
+          } else {
+            _emailController.text = text;
+            setState(() {});
+            _newVoiceText = _tellFirstName;
+            _startInstruction();
+          }
+          break;
+        case _tellPassword:
+          _passwordController.text = text;
+          setState(() {});
+          _newVoiceText = _tellPassword;
+          if (_authMode == AuthMode.Login) {
+            _submit();
+          } else {
+            _newVoiceText = _tellConfirmPassword;
+            _startInstruction();
+          }
+          break;
+        case _tellConfirmPassword:
+          _confirmPasswordController.text = text;
+          setState(() {});
+          _submit();
+          break;
+
+        case _tellFirstName:
+          _firstNameController.text = text;
+          setState(() {});
+          _newVoiceText = _tellLastName;
+          _startInstruction();
+          break;
+        case _tellLastName:
+          _lastNameController.text = text;
+          setState(() {});
+          _newVoiceText = _tellNumber;
+          _startInstruction();
+          break;
+        case _tellNumber:
+          _phoneController.text = text;
+          setState(() {});
+          _newVoiceText = _tellPassword;
+          _startInstruction();
+          break;
+      }
       if (_newVoiceText == _tellEmail) {
         _emailController.text = text;
         setState(() {});
@@ -325,7 +377,12 @@ class _AuthCardState extends State<AuthCard>
         _passwordController.text = text;
         setState(() {});
         _newVoiceText = _tellPassword;
-        _submit();
+        if (_authMode == AuthMode.Login) {
+          _submit();
+        } else {
+          _newVoiceText = _tellConfirmPassword;
+          _startInstruction();
+        }
       } else if (_newVoiceText == _areYouANewUser) {
         if (text.toLowerCase() == "yes") {
           _switchAuthMode();
@@ -365,7 +422,7 @@ class _AuthCardState extends State<AuthCard>
       } else {
         // Sign user up
         await Provider.of<Auth>(context, listen: false)
-            .signUp(_authData['email'], _authData['password']);
+            .signUp(_authData['email'], _authData['password'],_authData['firstName'],_authData['lastName'],_authData['number']);
       }
     } on HttpException catch (error) {
       var errorMessage = 'Authentication Fail';
@@ -464,7 +521,6 @@ class _AuthCardState extends State<AuthCard>
                 ),
                 TextFormField(
                   decoration: InputDecoration(labelText: 'First Name'),
-                  obscureText: true,
                   controller: _firstNameController,
                   onSaved: (value) {
                     _authData['firstName'] = value;
@@ -472,7 +528,6 @@ class _AuthCardState extends State<AuthCard>
                 ),
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Last Name'),
-                  obscureText: true,
                   controller: _lastNameController,
                   onSaved: (value) {
                     _authData['lastName'] = value;
@@ -480,38 +535,9 @@ class _AuthCardState extends State<AuthCard>
                 ),
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Phone Number'),
-                  obscureText: true,
                   controller: _phoneController,
                   onSaved: (value) {
                     _authData['number'] = value;
-                  },
-                ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  controller: _passwordController,
-                  validator: (value) {
-                    if (value.isEmpty || value.length < 5) {
-                      return 'Password is too short!';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _authData['password'] = value;
-                  },
-                ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  controller: _passwordController,
-                  validator: (value) {
-                    if (value.isEmpty || value.length < 5) {
-                      return 'Password is too short!';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _authData['password'] = value;
                   },
                 ),
                 TextFormField(
@@ -538,6 +564,7 @@ class _AuthCardState extends State<AuthCard>
                     opacity: _opacityAnimation,
                     child: TextFormField(
                       enabled: _authMode == AuthMode.Signup,
+                      controller: _confirmPasswordController,
                       decoration:
                           InputDecoration(labelText: 'Confirm Password'),
                       obscureText: true,

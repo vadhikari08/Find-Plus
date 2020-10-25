@@ -2,9 +2,12 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as Http;
+import 'package:shop_app/models/User.dart';
 import 'dart:convert';
 import '../models/http_exception.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_app/utility/constant.dart';
+
 //vadhikari.vit@gmail.com
 // vikraM97
 class Auth with ChangeNotifier {
@@ -12,6 +15,7 @@ class Auth with ChangeNotifier {
   DateTime _expireDate;
   String _userId;
   Timer _authTimer;
+
   bool get isAuth {
     return _token != null;
   }
@@ -29,12 +33,14 @@ class Auth with ChangeNotifier {
     return null;
   }
 
-  Future<void> signUp(String email, String password) async {
-    return authenticate(email, password, 'signUp');
+  Future<void> signUp(String email, String password, String firstName,
+      String lastName, String number) async {
+    return authenticate(email, password, 'signUp',
+        firstName: firstName, lastName: lastName, number: number);
   }
 
-  Future<void> authenticate(
-      String email, String password, String urlSegment) async {
+  Future<void> authenticate(String email, String password, String urlSegment,
+      {String firstName = "", String lastName = "", String number = ""}) async {
     final url =
         'https://identitytoolkit.googleapis.com/v1/accounts:$urlSegment?key=AIzaSyCQyR_58NtsW0KcBjEFALLMZsJPpQinNGE';
     try {
@@ -54,12 +60,15 @@ class Auth with ChangeNotifier {
       _expireDate = DateTime.now()
           .add(Duration(seconds: int.parse(responseBody['expiresIn'])));
       print('notifiy listeners');
+      if (urlSegment == 'signUp') {
+        addUser(userId, firstName, lastName, email, number);
+      }
       autoLogout();
       notifyListeners();
       final preferences = await SharedPreferences.getInstance();
       final userData = json.encode({
-        'email':email,
-        'password':password,
+        'email': email,
+        'password': password,
         'token': _token,
         'user_token': _userId,
         'expire_date': _expireDate.toIso8601String()
@@ -77,7 +86,7 @@ class Auth with ChangeNotifier {
       return false;
     }
     final userData =
-    json.decode(preferences.getString('userData')) as Map<String, dynamic>;
+        json.decode(preferences.getString('userData')) as Map<String, dynamic>;
     print('preference data $userData');
     final expiryDate = DateTime.parse(userData['expire_date']);
     if (expiryDate.isBefore(DateTime.now())) {
@@ -121,6 +130,24 @@ class Auth with ChangeNotifier {
     _expireDate = null;
     print('Preference is cleared');
     notifyListeners();
+  }
+
+  Future<void> addUser(String userId, String firstName, String lastName,
+      String email, String number) async {
+    var url = '${Constants.firebaseUrl}users/$_userId.json?auth=$_token';
+    try {
+      final response = await Http.post(url,
+          body: json.encode(User(
+              email: email,
+              firstName: firstName,
+              lastName: lastName,
+              cardNumber: "",
+              number: number)));
+      print("add user");
+    } catch (error) {
+      print(error.toString());
+      throw HttpException(message: 'Error Occur while placing order');
+    }
   }
 
   void autoLogout() {
