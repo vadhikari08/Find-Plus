@@ -425,14 +425,14 @@ class _AuthCardState extends State<AuthCard>
       if (_authMode == AuthMode.Login) {
         // Log user in
         await Provider.of<Auth>(context, listen: false)
-            .signIn(_authData['email']+'test.com', _authData['password']);
+            .signIn(_authData['email']+'@test.com', _authData['password']);
         /* if(Provider.of<Auth>(context).isAuth){
           Navigator.of(context).pushReplacementNamed(Constants.homeSCreenRoute);
         }*/
       } else {
         // Sign user up
         await Provider.of<Auth>(context, listen: false).signUp(
-            _authData['email']+'test.com',
+            _authData['email']+'@test.com',
             _authData['password'],
             _authData['firstName'],
             _authData['lastName'],
