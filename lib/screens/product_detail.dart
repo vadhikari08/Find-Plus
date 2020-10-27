@@ -29,7 +29,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   String _newVoiceText = '';
   String productionDetails = 'Product Details :';
   String productionAdded =
-      'Product is added to cart. Seller will call you shortly.';
+      'Product is added to cart.';
   String addProductSpeech = "Do you want to add this product in cart?";
   TtsState ttsState = TtsState.stopped;
   FlutterTts flutterTts;

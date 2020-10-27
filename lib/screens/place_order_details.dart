@@ -70,6 +70,7 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
   bool hasVision = false;
 
   bool _startSpeak = false;
+
   User user = null;
 
   @override
@@ -114,18 +115,20 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
   }
 
   void placeOrder() async {
-    user = await Provider.of<Products>(context).fetchUserDetail();
-    if (user != null) {
-      if (user.firstName != null && user.firstName.isNotEmpty)
-        _nameFirstController.text = user.firstName;
+    // user = await Provider.of<Products>(context).fetchUserDetail();
+    // if (user != null) {
+    //   if (user.firstName != null && user.firstName.isNotEmpty)
+    //     _nameFirstController.text = user.firstName;
 
-      if (user.lastName != null && user.lastName.isNotEmpty)
-        _nameLastController.text = user.lastName;
+    //   if (user.lastName != null && user.lastName.isNotEmpty)
+    //     _nameLastController.text = user.lastName;
 
-      if (user.number != null && user.number.isNotEmpty)
-        _numberController.text = user.number;
-    }
-    setState(() {});
+    //   if (user.number != null && user.number.isNotEmpty)
+    //     _numberController.text = user.number;
+
+    //     setState(() {});
+    // }
+    
     initValue();
   }
 
@@ -164,7 +167,7 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
         ttsState = TtsState.stopped;
       });
       if (_newVoiceText == _tellTheDetails) {
-        if (user == null) {
+        if (user != null) {
           if (user.firstName.isEmpty) {
             _newVoiceText = _tellFirstName;
           } else if (user.lastName.isEmpty) {
@@ -180,6 +183,7 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
           _startInstruction();
         }
       } else if (_newVoiceText == _tellOrderPlaced) {
+        Navigator.of(context).pushReplacementNamed(Constants.homeSCreenRoute);
       } else {
         _startSpeaking();
       }
@@ -236,7 +240,7 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
   Widget _enterLastName() {
     return TextFormField(
       controller: _nameLastController,
-      decoration: InputDecoration(labelText: 'First Name'),
+      decoration: InputDecoration(labelText: 'Last Name'),
       keyboardType: TextInputType.name,
     );
   }
@@ -252,7 +256,14 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
     );
   }
 
-  void _placeOrder() {}
+  void _placeOrder() async{
+    try {
+      await Provider.of<Orders>(context, listen: false).addOrders(
+          cart.items.values.toList(), cart.totalAmount);
+         Navigator.of(context).pushReplacementNamed(Constants.orderScreenRoute);
+    } catch (error) {
+    }
+  }
 
   Widget _enterNumber() {
     return TextFormField(
@@ -343,11 +354,12 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
   }
 
   Future _startSpeaking() async {
-    print('hello ----------------------------------->');
+   print('hello ----------------------------------->');
+
     bool available = await speech.initialize(
         onStatus: statusListener, onError: errorListener);
     if (available) {
-      //    await speech.listen(onResult: resultListener);
+      await speech.listen(onResult: resultListener);
     } else {
       speech.stop();
     }
@@ -399,7 +411,7 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
           _startInstruction();
           break;
         case _tellAddress:
-          _nameFirstController.text = text;
+          _addressController.text = text;
           _newVoiceText = _tellCardNumber;
           setState(() {});
           _startInstruction();

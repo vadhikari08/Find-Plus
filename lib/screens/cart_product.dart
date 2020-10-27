@@ -107,8 +107,6 @@ class _OrderButtonState extends State<OrderButton> {
 
   get isContinued => ttsState == TtsState.continued;
 
-  bool _startSpeak = false;
-
   @override
   Widget build(BuildContext context) {
     final scaffold = Scaffold.of(context);
@@ -300,11 +298,12 @@ class _OrderButtonState extends State<OrderButton> {
   }
 
   Future _startSpeaking() async {
-    print('hello ----------------------------------->');
+     print('hello ----------------------------------->');
+
     bool available = await speech.initialize(
         onStatus: statusListener, onError: errorListener);
     if (available) {
-      //    await speech.listen(onResult: resultListener);
+      await speech.listen(onResult: resultListener);
     } else {
       speech.stop();
     }
@@ -329,7 +328,7 @@ class _OrderButtonState extends State<OrderButton> {
       switch (_newVoiceText) {
         case _place_order_now:
           if (text.toLowerCase() == "yes") {
-            _startInstruction();
+            placeOrderNow();
           } else if (text.toLowerCase() == "no") {
             _newVoiceText = _search_another_product;
             _startInstruction();
@@ -354,5 +353,10 @@ class _OrderButtonState extends State<OrderButton> {
     print('error--------------------->$error');
     speech.stop();
     Future.delayed(Duration(seconds: 1), () => _startInstruction());
+  }
+  
+  void placeOrderNow(){
+      Navigator.of(context)
+                  .pushReplacementNamed(Constants.placeOrderDetailsRoute,arguments: widget.cart);
   }
 }
