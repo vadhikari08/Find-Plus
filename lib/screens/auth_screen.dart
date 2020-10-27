@@ -319,6 +319,16 @@ class _AuthCardState extends State<AuthCard>
           .toLowerCase()
           .replaceAll(new RegExp(r"\s+"), "");
       switch (_newVoiceText) {
+        case _areYouANewUser:
+          if (text.toLowerCase() == "yes") {
+            _switchAuthMode();
+            _newVoiceText = _tellEmail;
+            _startInstruction();
+          } else if (text.toLowerCase() == 'no') {
+            _newVoiceText = _tellEmail;
+            _startInstruction();
+          }
+          break;
         case _tellEmail:
           if (_authMode == AuthMode.Login) {
             _emailController.text = text;
@@ -368,7 +378,7 @@ class _AuthCardState extends State<AuthCard>
           _startInstruction();
           break;
       }
-      if (_newVoiceText == _tellEmail) {
+/*      if (_newVoiceText == _tellEmail) {
         _emailController.text = text;
         setState(() {});
         _newVoiceText = _tellPassword;
@@ -392,7 +402,7 @@ class _AuthCardState extends State<AuthCard>
           _newVoiceText = _tellEmail;
           _startInstruction();
         }
-      }
+      }*/
 
       result.recognizedWords.toUpperCase().contains(Constants.no.toUpperCase());
     }
@@ -415,14 +425,18 @@ class _AuthCardState extends State<AuthCard>
       if (_authMode == AuthMode.Login) {
         // Log user in
         await Provider.of<Auth>(context, listen: false)
-            .signIn(_authData['email'], _authData['password']);
+            .signIn(_authData['email']+'test.com', _authData['password']);
         /* if(Provider.of<Auth>(context).isAuth){
           Navigator.of(context).pushReplacementNamed(Constants.homeSCreenRoute);
         }*/
       } else {
         // Sign user up
-        await Provider.of<Auth>(context, listen: false)
-            .signUp(_authData['email'], _authData['password'],_authData['firstName'],_authData['lastName'],_authData['number']);
+        await Provider.of<Auth>(context, listen: false).signUp(
+            _authData['email']+'test.com',
+            _authData['password'],
+            _authData['firstName'],
+            _authData['lastName'],
+            _authData['number']);
       }
     } on HttpException catch (error) {
       var errorMessage = 'Authentication Fail';
@@ -519,27 +533,33 @@ class _AuthCardState extends State<AuthCard>
                     _authData['email'] = value;
                   },
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'First Name'),
-                  controller: _firstNameController,
-                  onSaved: (value) {
-                    _authData['firstName'] = value;
-                  },
-                ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Last Name'),
-                  controller: _lastNameController,
-                  onSaved: (value) {
-                    _authData['lastName'] = value;
-                  },
-                ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Phone Number'),
-                  controller: _phoneController,
-                  onSaved: (value) {
-                    _authData['number'] = value;
-                  },
-                ),
+                _authMode == AuthMode.Signup
+                    ? TextFormField(
+                        decoration: InputDecoration(labelText: 'First Name'),
+                        controller: _firstNameController,
+                        onSaved: (value) {
+                          _authData['firstName'] = value;
+                        },
+                      )
+                    : SizedBox(),
+                _authMode == AuthMode.Signup
+                    ? TextFormField(
+                        decoration: InputDecoration(labelText: 'Last Name'),
+                        controller: _lastNameController,
+                        onSaved: (value) {
+                          _authData['lastName'] = value;
+                        },
+                      )
+                    : SizedBox(),
+                _authMode == AuthMode.Signup
+                    ? TextFormField(
+                        decoration: InputDecoration(labelText: 'Phone Number'),
+                        controller: _phoneController,
+                        onSaved: (value) {
+                          _authData['number'] = value;
+                        },
+                      )
+                    : SizedBox(),
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Password'),
                   obscureText: true,

@@ -150,6 +150,7 @@ class Auth with ChangeNotifier {
     }
   }
 
+
   void autoLogout() {
     if (_authTimer != null) {
       _authTimer.cancel();

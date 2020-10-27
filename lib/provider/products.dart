@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shop_app/models/User.dart';
 import 'package:shop_app/utility/constant.dart';
 import 'product.dart';
 import 'package:http/http.dart' as http;
@@ -27,9 +28,12 @@ class Products with ChangeNotifier {
   List<Product> searchProduct(String title) {
     return _item
         .where((element) =>
-            element.title.toLowerCase().contains(title.toLowerCase()))
+            element.title
+                .toLowerCase()
+                .replaceAll(new RegExp(r"\s+"), "").contains(title.toLowerCase()))
         .toList();
   }
+
   List<Product> selectedCategory(String category) {
     return _item
         .where((element) =>
@@ -90,6 +94,28 @@ class Products with ChangeNotifier {
       notifyListeners();
     } catch (error) {
       throw HttpException(message: 'Error occur at server side');
+    }
+  }
+
+  Future<User> fetchUserDetail() async {
+     var url = '${Constants.firebaseUrl}users/$_userId.json?auth=$_token';
+    print(url);
+    try {
+      final response = await http.get(url);
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
+      print(responseData);
+      if (responseData == null) {
+        _item = [];
+        return null;
+      }
+      final favUrl =
+          '${Constants.firebaseUrl}userFavorites/$_userId.json?auth=$_token';
+      final favResponse = await http.get(favUrl);
+      final userData = json.decode(favResponse.body);
+      print(userData);
+      return User.fromJson(userData);
+    } catch (error) {
+      return null;
     }
   }
 

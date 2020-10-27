@@ -5,11 +5,17 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_app/models/User.dart';
 import 'package:shop_app/provider/auth.dart';
+import 'package:shop_app/provider/cart.dart';
+import 'package:shop_app/provider/orders.dart';
+import 'package:shop_app/provider/product.dart';
+import 'package:shop_app/provider/products.dart';
 import 'package:shop_app/utility/constant.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -23,7 +29,11 @@ class PlaceOrderDetails extends StatefulWidget {
 }
 
 class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
-  final _nameController = TextEditingController();
+  final _nameFirstController = TextEditingController();
+  final _nameLastController = TextEditingController();
+  final _cvvNumberController = TextEditingController();
+  final _cardNumberController = TextEditingController();
+
   final _numberController = TextEditingController();
   final _zipCodeController = TextEditingController();
   final _addressController = TextEditingController();
@@ -35,7 +45,18 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
   double rate = 1.0;
   stt.SpeechToText speech;
 
-  String _newVoiceText = Constants.choose_user_message;
+  static const _tellTheDetails = "Tell the Following Details";
+  static const String _tellFirstName = ' Tell your first name?';
+  static const String _tellLastName = 'Tell your last name?';
+  static const String _tellNumber = 'Tell your Number?';
+  static const String _tellAddress = 'Tell your Address?';
+  static const String _tellPinCode = "Tell your Pin Code";
+  static const String _tellCardNumber = 'Tell your Card Number?';
+  static const String _tellCVVNumber = 'Tell your CVV Number>';
+  static const String _tellOrderPlaced =
+      'Your Order is placed. Seller will call you shortly';
+    Cart cart=null;
+  String _newVoiceText = _tellTheDetails;
 
   TtsState ttsState = TtsState.stopped;
 
@@ -46,11 +67,14 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
   get isPaused => ttsState == TtsState.paused;
 
   get isContinued => ttsState == TtsState.continued;
+  bool hasVision = false;
 
   bool _startSpeak = false;
+  User user = null;
 
   @override
   Widget build(BuildContext context) {
+     cart= ModalRoute.of(context).settings.arguments as Cart;
     return Scaffold(
       appBar: AppBar(title: Text("Place Order")),
       body: SingleChildScrollView(
@@ -59,19 +83,61 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
               child: Column(
                 children: [
                   SizedBox(height: 10),
-                  _enterName(),
+                  _enterFirstName(),
+                  SizedBox(height: 10),
+                  _enterLastName(),
                   SizedBox(height: 10),
                   _enterNumber(),
                   SizedBox(height: 10),
                   _zipCode(),
                   SizedBox(height: 10),
                   _address(),
+                  SizedBox(height: 10),
+                  _CardNumber(),
+                  SizedBox(height: 10),
+                  _CardCVVNumber(),
                   SizedBox(height: 50),
                   _placeOrderButton(),
                   SizedBox(height: 20)
                 ],
               ))),
     );
+  }
+
+  @override
+  @override
+  void initState() {
+    super.initState();
+    initTts();
+    speech = stt.SpeechToText();
+    placeOrder();
+  }
+
+  void placeOrder() async {
+    user = await Provider.of<Products>(context).fetchUserDetail();
+    if (user != null) {
+      if (user.firstName != null && user.firstName.isNotEmpty)
+        _nameFirstController.text = user.firstName;
+
+      if (user.lastName != null && user.lastName.isNotEmpty)
+        _nameLastController.text = user.lastName;
+
+      if (user.number != null && user.number.isNotEmpty)
+        _numberController.text = user.number;
+    }
+    setState(() {});
+    initValue();
+  }
+
+  void initValue() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!preferences.containsKey('vision')) {
+      hasVision = true;
+      return;
+    }
+    print('value of vision is ${preferences.getBool("vision")}');
+    hasVision = preferences.getBool('vision');
+    if (!hasVision) _startInstruction();
   }
 
   initTts() {
@@ -97,6 +163,26 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
         print("Complete");
         ttsState = TtsState.stopped;
       });
+      if (_newVoiceText == _tellTheDetails) {
+        if (user == null) {
+          if (user.firstName.isEmpty) {
+            _newVoiceText = _tellFirstName;
+          } else if (user.lastName.isEmpty) {
+            _newVoiceText = _tellLastName;
+          } else if (user.number.isEmpty) {
+            _newVoiceText = _tellNumber;
+          } else {
+            _newVoiceText = _tellPinCode;
+          }
+          _startInstruction();
+        } else {
+          _newVoiceText = _tellFirstName;
+          _startInstruction();
+        }
+      } else if (_newVoiceText == _tellOrderPlaced) {
+      } else {
+        _startSpeaking();
+      }
     });
 
     flutterTts.setCancelHandler(() {
@@ -130,10 +216,27 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
     });
   }
 
-  Widget _enterName() {
+  void placeOrderAPI() async {
+    try {
+      await Provider.of<Orders>(context, listen: false).addOrders(
+          cart.items.values.toList(), cart.totalAmount);
+          SystemNavigator.pop();
+    } catch (error) {
+    }
+  }
+
+  Widget _enterFirstName() {
     return TextFormField(
-      controller: _nameController,
-      decoration: InputDecoration(labelText: 'Name'),
+      controller: _nameFirstController,
+      decoration: InputDecoration(labelText: 'First Name'),
+      keyboardType: TextInputType.name,
+    );
+  }
+
+  Widget _enterLastName() {
+    return TextFormField(
+      controller: _nameLastController,
+      decoration: InputDecoration(labelText: 'First Name'),
       keyboardType: TextInputType.name,
     );
   }
@@ -163,6 +266,20 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
     return TextFormField(
         controller: _zipCodeController,
         decoration: InputDecoration(labelText: 'Zip Code'),
+        keyboardType: TextInputType.number);
+  }
+
+  Widget _CardNumber() {
+    return TextFormField(
+        controller: _cardNumberController,
+        decoration: InputDecoration(labelText: 'Card Number'),
+        keyboardType: TextInputType.number);
+  }
+
+  Widget _CardCVVNumber() {
+    return TextFormField(
+        controller: _cvvNumberController,
+        decoration: InputDecoration(labelText: 'CVV Number'),
         keyboardType: TextInputType.number);
   }
 
@@ -230,7 +347,7 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
     bool available = await speech.initialize(
         onStatus: statusListener, onError: errorListener);
     if (available) {
-  //    await speech.listen(onResult: resultListener);
+      //    await speech.listen(onResult: resultListener);
     } else {
       speech.stop();
     }
@@ -245,6 +362,63 @@ class _PlaceOrderDetailsState extends State<PlaceOrderDetails> {
     print('error--------------------->$error');
     speech.stop();
     Future.delayed(Duration(seconds: 1), () => _startInstruction());
+  }
+
+  void resultListener(SpeechRecognitionResult result) async {
+    print(result.recognizedWords.toString());
+    if (result.confidence > 0 && result.finalResult == true) {
+      if (result.recognizedWords != null && result.recognizedWords.isEmpty) {
+        _newVoiceText = Constants.unable_to_choose_yes_and_no;
+        //_startInstruction();
+        return;
+      }
+      String text = result.recognizedWords;
+      switch (_newVoiceText) {
+        case _tellFirstName:
+          _nameFirstController.text = text;
+          _newVoiceText = _tellLastName;
+          setState(() {});
+          _startInstruction();
+          break;
+        case _tellLastName:
+          _nameLastController.text = text;
+          _newVoiceText = _tellNumber;
+          setState(() {});
+          _startInstruction();
+          break;
+        case _tellNumber:
+          _numberController.text = text;
+          _newVoiceText = _tellPinCode;
+          setState(() {});
+          _startInstruction();
+          break;
+        case _tellPinCode:
+          _zipCodeController.text = text;
+          _newVoiceText = _tellAddress;
+          setState(() {});
+          _startInstruction();
+          break;
+        case _tellAddress:
+          _nameFirstController.text = text;
+          _newVoiceText = _tellCardNumber;
+          setState(() {});
+          _startInstruction();
+          break;
+        case _tellCardNumber:
+          _cardNumberController.text = text;
+          _newVoiceText = _tellCVVNumber;
+          setState(() {});
+          _startInstruction();
+          break;
+        case _tellCVVNumber:
+          _cvvNumberController.text = text;
+          _newVoiceText = _tellOrderPlaced;
+          setState(() {});
+          _startInstruction();
+      }
+
+      result.recognizedWords.toUpperCase().contains(Constants.no.toUpperCase());
+    }
   }
 
   void submitCartProduct() async {}
